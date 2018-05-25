@@ -10,6 +10,11 @@
             margin: 0 auto;
         }
 
+        .no-events {
+            font-weight: bold;
+            font-style: italic;
+        }
+
         body {
             font-family: sans-serif;
         }
@@ -120,6 +125,8 @@
                 </div>
             </div>
         </div>
+    {% else %}
+        <h1 class="no-events">Keine Einsätze</h1>
     {% endfor %}
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/moment.min.js"></script>
