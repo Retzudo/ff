@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+    <ul>
+        {% for event in events %}
+            <li>
+                {{ event.title }}
+                <ul>
+                    {% for brigade in event.brigades %}
+                        <li>{{ brigade.location }}: {{ brigade.start }} - {{ brigade.end }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
