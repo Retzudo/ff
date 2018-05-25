@@ -2,20 +2,140 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title></title>
+    <title>FF</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+    <style>
+        .container {
+            width: 500px;
+            margin: 0 auto;
+        }
+
+        body {
+            font-family: sans-serif;
+        }
+
+        .thing {
+            overflow: hidden;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .thing + .thing {
+            margin-top: 0.5em;
+        }
+
+        .thing .body {
+            border-radius: 0 5px 5px 0;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-left: none;
+            width: 500px;
+            overflow: hidden;
+        }
+
+        .thing .reason {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px 0 0 5px;
+            width: 45px;
+            background: #c6c6c6;
+            font-size: 1.5em;
+        }
+
+        .thing .reason .icon:before {
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            color: rgba(0, 0, 0, 0.6);
+            content: '\f128';
+        }
+
+        .thing .reason.fire {
+            background: #ff4747;
+        }
+
+        .thing .reason.fire .icon:before {
+            color: rgba(255, 255, 255, 0.8);
+            content: '\f06d';
+        }
+
+        .thing .reason.technical {
+            background: #475dff;
+        }
+
+        .thing .reason.technical .icon:before {
+            color: rgba(255, 255, 255, 0.8);
+            content: '\f0ad';
+        }
+
+        .thing .reason.persons {
+            background: #ffdd47;
+        }
+
+        .thing .reason.persons .icon:before {
+            content: '\f183';
+        }
+
+        .thing .reason.environmental {
+            background: #75ff47;
+        }
+
+        .thing .reason.environmental .icon:before {
+            content: '\f06c';
+        }
+
+        .thing .title,
+        .thing .brigades {
+            padding: 0.5em;
+        }
+
+        .thing .title {
+            font-size: 1.5em;
+            background-color: #f8f8f8;
+        }
+    </style>
 </head>
 <body>
-    <ul>
-        {% for event in events %}
-            <li>
-                {{ event.title }}
-                <ul>
-                    {% for brigade in event.brigades %}
-                        <li>{{ brigade.location }}: {{ brigade.start }} - {{ brigade.end }}</li>
-                    {% endfor %}
-                </ul>
-            </li>
-        {% endfor %}
-    </ul>
+<div class="container">
+    {% for event in events %}
+        <div class="thing">
+            <div class="reason {{ event.type }}">
+                <span class="icon"></span>
+            </div>
+            <div class="body">
+                <div class="title">{{ event.title }}</div>
+                <div class="brigades">
+                    <ul>
+                        {% for brigade in event.brigades %}
+                            <li>
+                                <strong>{{ brigade.location }}: </strong>
+                                <span>
+                                    <time datetime="{{ brigade.start }}" title="{{ brigade.start }}">{{ brigade.start }}</time>
+                                    {% if brigade.end %}
+                                        - <time datetime="{{ brigade.end }}" title="{{ brigade.end }}">{{ brigade.end }}</time>
+                                    {% endif %}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/locale/de.js"></script>
+<script>
+    (function () {
+        moment.locale('de');
+        var $dates = document.getElementsByTagName('time');
+
+        for (var i = 0; i < $dates.length; i++) {
+            var $date = $dates[i];
+            var datetime = moment($date.getAttribute('datetime'));
+
+            $date.innerText = datetime.fromNow();
+        }
+    }());
+</script>
 </body>
 </html>
