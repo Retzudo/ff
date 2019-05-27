@@ -7,87 +7,82 @@ from typing import List
 
 app = Flask(__name__)
 
-URL = 'http://www.ff-ried.at/site/?cID=86&mID=33'
-TIME_FORMAT = '%d.%m. %H:%M'
+URL = 'https://www.ff-ried.at/einsatzkarte-bezirk-ried/'
+TIME_FORMAT = '%d.%m.%Y | %H:%M'
 
 
 class Brigade:
-    def __init__(self, location: str, start: datetime, end: datetime=None):
+    def __init__(self, location: str, start: datetime, end: datetime = None):
         self.location = location
         self.start = start
         self.end = end
 
-    @classmethod
-    def from_row(cls, row):
-        tds = row.find_all('td')
-        dates = tds[1]
-        location = tds[2].string
-        start, end = dates.string.split('-', maxsplit=2)
-
-        start = start.strip()
-        end = end.strip()
-        now = datetime.now()
-
-        if start:
-            start = datetime.strptime(start, TIME_FORMAT)
-            start = start.replace(year=now.year)
-
-        if end:
-            end = datetime.strptime(end, TIME_FORMAT)
-            end = end.replace(year=now.year)
-
-        return cls(
-            location=location,
-            start=start,
-            end=end,
-        )
-
 
 class Event:
-    def __init__(self, title: str, type: str, brigades: List[Brigade]=None):
+    def __init__(self, title: str, type: str, brigades: List[Brigade] = None):
         self.title = title
         self.type = type
         self.brigades = brigades or []
 
-    @staticmethod
-    def get_event_type(string):
-        if 'bullet_red' in string:
-            return 'fire'
-        if 'bullet_blue' in string:
-            return 'technical'
-        if 'bullet_yellow' in string:
-            return 'persons'
-        if 'bullet_green' in string:
-            return 'environmental'
 
-        return 'unknown'
+def get_event_type(image_url: str) -> str:
+    if 'technisches' in image_url.lower():
+        return 'technical'
 
-    @classmethod
-    def from_row(cls, row):
-        title = row.find('b').string.strip()
-        type = cls.get_event_type(row.find('img')['src'])
+    if 'brand' in image_url.lower():
+        return 'fire'
 
-        return cls(title=title, type=type)
+    if 'personenrettung' in image_url.lower():
+        return 'persons'
+
+    if 'umwelt' in image_url.lower():
+        return 'environmental'
+
+    return 'unknown'
+
+
+def brigade_from_item(item) -> Brigade:
+    data_lines = item.find_all(class_='EinsatzItemContent_ListView')
+
+    location = data_lines[0].findChildren()[1].text.strip()
+    start_text = data_lines[1].findChildren()[1].text.strip()
+    end_text = data_lines[2].findChildren()[1].text.strip()
+
+    start = datetime.strptime(start_text, TIME_FORMAT)
+    end = datetime.strptime(end_text, TIME_FORMAT) if end_text.lower() != 'andauernd' else None
+
+    return Brigade(
+        location,
+        start,
+        end
+    )
+
+
+def event_from_item(item) -> Event:
+    title_item = item.find(class_='Alarmierungen_ListView_Item_Title')
+    title = title_item.getText().strip()
+
+    brigades_container = item.find(class_='Alarmierungen_ListView_Item_Content')
+    brigade_items = brigades_container.find_all('div', recursive=False)
+    brigades = [brigade_from_item(item) for item in brigade_items]
+
+    image_url = item.find(class_='Alarmierungen_ListView_Item_Title_Symbol').find('img').get('src')
+    event_type = get_event_type(image_url)
+
+    return Event(
+        title,
+        event_type,
+        brigades,
+    )
 
 
 def parse_content(html: str) -> List[Event]:
-    print('asdf', 'Überflutung' in html)
     soup = BeautifulSoup(html, 'html.parser')
-    events = []
 
-    table = soup.find(id='BWSTEinsatz').find('table')
-    rows = table.find_all('tr')
+    container = soup.find(class_='EinsatzlisteContent')
+    items = container.find_all(class_='Alarmierungen_ListView_Item')
 
-    for row in rows:
-        if len(row.find_all('td')) == 2:  # Event row
-            event = Event.from_row(row)
-            events.append(event)
-        else:
-            events[-1].brigades.append(
-                Brigade.from_row(row)
-            )
-
-    return events
+    return [event_from_item(item) for item in items]
 
 
 @app.route('/')
